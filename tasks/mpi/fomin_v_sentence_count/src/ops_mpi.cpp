@@ -20,7 +20,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::pre_processing() {
 
   boost::mpi::broadcast(world, input_size, 0);
 
-  int portion_size = input_size / world_size;
+  portion_size = input_size / world_size;
   int remainder = input_size % world_size;
   if (world_rank < remainder) {
     portion_size++;
