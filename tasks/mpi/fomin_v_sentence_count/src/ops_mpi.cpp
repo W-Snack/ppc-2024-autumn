@@ -42,8 +42,9 @@ bool fomin_v_sentence_count::SentenceCountParallel::validation() {
   internal_order_test();
   if (world.rank() == 0) {
     return taskData->inputs_count[0] == static_cast<unsigned int>(input_size) && taskData->outputs_count[0] == 1;
+  } else {
+    return taskData->inputs_count[0] == static_cast<unsigned int>(input_size);
   }
-  return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountParallel::run() {
