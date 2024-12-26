@@ -13,7 +13,6 @@ TEST(fomin_v_sentence_count, test_parallel_pipeline_run) {
 
   // Create TaskData
   std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
-  int text_size = 0;
 
   if (world.rank() == 0) {
     global_text = "Hello! How are you? I am fine.";
@@ -54,7 +53,6 @@ TEST(fomin_v_sentence_count, test_sequential_task_run) {
 
   // Create TaskData
   std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
-  int text_size = 0;
 
   if (world.rank() == 0) {
     global_text = "Hello! How are you? I am fine.";
