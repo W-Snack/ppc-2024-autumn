@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <ppc/core/perf.hpp>
+#include <core/perf/include/perf.hpp>
 
 #include "seq/fomin_v_sentence_count/include/ops_seq.hpp"
 
