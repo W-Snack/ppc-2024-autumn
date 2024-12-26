@@ -42,7 +42,7 @@ class SentenceCountParallel : public ppc::core::Task {
   int input_size{};
   int portion_size{};
   int local_sentence_count{};
-  int total_sentence_count{};
+
   char *input_ptr{};
   std::string ops;
   boost::mpi::communicator world;
