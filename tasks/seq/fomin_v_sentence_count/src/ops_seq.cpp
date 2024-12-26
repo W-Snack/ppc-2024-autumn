@@ -24,10 +24,10 @@ bool fomin_v_sentence_count::SentenceCountSequential::run() {
   bool in_sentence = false;
   for (int i = 0; input_[i] != '\0'; ++i) {
     if (input_[i] == '.' || input_[i] == '!' || input_[i] == '?') {
-      if (!in_sentence) {
+      if (in_sentence) {
         sentence_count++;
-        in_sentence = true;
       }
+      in_sentence = false;
     } else if (isspace(input_[i])) {
       in_sentence = false;
     } else {
