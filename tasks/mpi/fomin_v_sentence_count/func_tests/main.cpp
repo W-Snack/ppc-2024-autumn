@@ -33,18 +33,12 @@ TEST(fomin_v_sentence_count, Test_Single_Sentence) {
 
   // Create TaskData
   std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+  taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
   taskDataPar->inputs_count.emplace_back(input.size());
+  taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
   taskDataPar->outputs_count.emplace_back(1);
 
-  if (world.rank() == 0) {
-    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
-    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
-  } else {
-    taskDataPar->inputs.emplace_back(nullptr);
-    taskDataPar->outputs.emplace_back(nullptr);
-  }
-
-  // Create and run parallel task
+   // Create and run parallel task
   auto sentenceCountParallel = std::make_shared<fomin_v_sentence_count::SentenceCountParallel>(taskDataPar);
   ASSERT_EQ(sentenceCountParallel->validation(), true);
   sentenceCountParallel->pre_processing();
@@ -61,18 +55,13 @@ TEST(fomin_v_sentence_count, Test_Multiple_Sentences) {
   std::string input = "Hello world. How are you? I'm fine!";
   int result = 0;
 
+ 
   // Create TaskData
   std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+  taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
   taskDataPar->inputs_count.emplace_back(input.size());
+  taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
   taskDataPar->outputs_count.emplace_back(1);
-
-  if (world.rank() == 0) {
-    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
-    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
-  } else {
-    taskDataPar->inputs.emplace_back(nullptr);
-    taskDataPar->outputs.emplace_back(nullptr);
-  }
 
   // Create and run parallel task
   auto sentenceCountParallel = std::make_shared<fomin_v_sentence_count::SentenceCountParallel>(taskDataPar);
@@ -92,18 +81,12 @@ TEST(fomin_v_sentence_count, Test_Sequential_Consistency) {
   int parallel_result = 0;
   int sequential_result = 0;
 
-  // Create TaskData for parallel task
+  // Create TaskData
   std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+  taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
   taskDataPar->inputs_count.emplace_back(input.size());
+  taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
   taskDataPar->outputs_count.emplace_back(1);
-
-  if (world.rank() == 0) {
-    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
-    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&parallel_result));
-  } else {
-    taskDataPar->inputs.emplace_back(nullptr);
-    taskDataPar->outputs.emplace_back(nullptr);
-  }
 
   // Create and run parallel task
   auto sentenceCountParallel = std::make_shared<fomin_v_sentence_count::SentenceCountParallel>(taskDataPar);
