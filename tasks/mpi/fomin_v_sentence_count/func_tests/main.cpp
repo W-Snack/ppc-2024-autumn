@@ -85,7 +85,7 @@ TEST(fomin_v_sentence_count, Test_Sequential_Consistency) {
   std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
   taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(const_cast<char*>(input.data())));
   taskDataPar->inputs_count.emplace_back(input.size());
-  taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&result));
+  taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(&parallel_result));
   taskDataPar->outputs_count.emplace_back(1);
 
   // Create and run parallel task
