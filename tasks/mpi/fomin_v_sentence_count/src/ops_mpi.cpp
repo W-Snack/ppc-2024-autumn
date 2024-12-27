@@ -52,7 +52,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::validation() {
   internal_order_test();
   if (world.rank() == 0) {
     // Check count elements of output
-    return taskData->inputs_count[0] == 1 && taskData->outputs_count[0] == 1;
+    return (taskData->inputs_count[0] == 0 || taskData->inputs_count[0] == 1) && taskData->outputs_count[0] == 1;
   }
   return true;
 }
