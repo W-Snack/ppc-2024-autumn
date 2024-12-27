@@ -36,7 +36,6 @@ class SentenceCountParallel : public ppc::core::Task {
   bool post_processing() override;
 
  private:
- private:
   std::vector<char> input_vec;
   std::vector<char> local_input_vec;
   int input_size{};
@@ -44,7 +43,6 @@ class SentenceCountParallel : public ppc::core::Task {
   int local_sentence_count{};
 
   char *input_ptr{};
-  std::string ops;
   boost::mpi::communicator world;
 };
 
