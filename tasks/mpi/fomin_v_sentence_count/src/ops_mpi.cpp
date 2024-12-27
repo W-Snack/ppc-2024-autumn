@@ -10,66 +10,59 @@ using namespace std::chrono_literals;
 bool fomin_v_sentence_count::SentenceCountParallel::pre_processing() {
   internal_order_test();
 
-  // Проверка на nullptr
-  if (taskData->inputs[0] == nullptr) {
-    return false;
-  }
+    if (world.rank() == 0) {
+      if (taskData->inputs[0] == nullptr) {
+        return false;
+      }
+      input_ = reinterpret_cast<char*>(taskData->inputs[0]);
+    }
 
-  int world_size = world.size();
-  int world_rank = world.rank();
+    int input_size;
+    if (world.rank() == 0) {
+      input_size = static_cast<int>(strlen(input_));
+    }
+    boost::mpi::broadcast(world, input_size, 0);
 
-  if (world_rank == 0) {
-    input_ptr = reinterpret_cast<char *>(taskData->inputs[0]);
-    input_size = taskData->inputs_count[0];
-    input_vec.assign(input_ptr, input_ptr + input_size);
-  }
+    int chunk_size = input_size / world.size();
+    local_input.resize(chunk_size);
 
-  boost::mpi::broadcast(world, input_size, 0);
+    if (world.rank() == 0) {
+      for (int proc = 1; proc < world.size(); ++proc) {
+        int start = proc * chunk_size;
+        boost::mpi::send(world, input_ + start, chunk_size, proc, 0);
+      }
+      // Handle the case where input_size is not divisible by world.size()
+      if (input_size % world.size() != 0) {
+        // Additional handling if necessary
+      }
+    } else {
+      boost::mpi::recv(world, local_input.data(), chunk_size, 0, 0);
+    }
 
-  // Проверка на пустую строку
-  if (input_size == 0) {
-    return false;
-  }
-
-  portion_size = input_size / world_size;
-  int remainder = input_size % world_size;
-  if (world_rank < remainder) {
-    portion_size++;
-  }
-
-  local_input_vec.resize(portion_size);
-
-  if (world_rank == 0) {
-    boost::mpi::scatter(world, input_vec, local_input_vec.data(), portion_size, 0);
-  } else {
-    boost::mpi::scatter(world, std::vector<char>(), local_input_vec.data(), portion_size, 0);
-  }
-
-  return true;
+    local_sentence_count = 0;
+    return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountParallel::validation() {
   internal_order_test();
-  if (world.rank() == 0) {
-    // Check count elements of output
-    return (taskData->inputs_count[0] == 0 || taskData->inputs_count[0] == 1) && taskData->outputs_count[0] == 1;
-  }
-  return true;
+    if (world.rank() == 0) {
+      return taskData->inputs_count[0] == 1 && taskData->outputs_count[0] == 1;
+    }
+    return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountParallel::run() {
   internal_order_test();
-  local_sentence_count = 0;
 
-  for (int i = 0; i < portion_size; ++i) {
-    if ((local_input_vec[i] == '.' || local_input_vec[i] == '!' || local_input_vec[i] == '?')) {
-      if (i == portion_size - 1 || isspace(local_input_vec[i + 1]) || local_input_vec[i + 1] == '\0') {
+    for (int i = 0; i < local_input.size(); ++i) {
+      if (local_input[i] == '.' || local_input[i] == '!' || local_input[i] == '?') {
         local_sentence_count++;
       }
     }
-  }
 
-  return true;
+    boost::mpi::reduce(world, local_sentence_count, sentence_count, boost::mpi::sum<int>(), 0);
+
+    return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountParallel::post_processing() {
@@ -93,14 +86,13 @@ bool fomin_v_sentence_count::SentenceCountParallel::post_processing() {
 bool fomin_v_sentence_count::SentenceCountSequential::pre_processing() {
   internal_order_test();
 
-  // Проверка на nullptr
-  if (taskData->inputs[0] == nullptr) {
-    return false;
-  }
-
-  input_ = reinterpret_cast<char *>(taskData->inputs[0]);
-  sentence_count = 0;
-  return true;
+    if (world.rank() == 0) {
+      if (taskData->outputs[0] == nullptr) {
+        return false;
+      }
+      reinterpret_cast<int*>(taskData->outputs[0])[0] = sentence_count;
+    }
+    return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountSequential::validation() {
