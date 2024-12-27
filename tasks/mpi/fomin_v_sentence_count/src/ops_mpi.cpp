@@ -29,10 +29,10 @@ bool fomin_v_sentence_count::SentenceCountParallel::pre_processing() {
   if (world.rank() == 0) {
     for (int proc = 1; proc < world.size(); ++proc) {
       int start = proc * chunk_size;
-      world.send(proc, input_ + start, chunk_size, proc, 0);
+      world.send(proc, input_ + start, chunk_size, 0);
     }
   } else {
-    world.recv(world, local_input.data(), chunk_size, 0, 0);
+    world.recv(0, local_input.data(), chunk_size, 0);
   }
 
   local_sentence_count = 0;
@@ -56,7 +56,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::run() {
     }
   }
 
-  reduce(world, local_sentence_count, sentence_count, std::plus, 0);
+  reduce(world, local_sentence_count, sentence_count, std::plus(), 0);
 
   return true;
 }
@@ -81,41 +81,40 @@ bool fomin_v_sentence_count::SentenceCountParallel::post_processing() {
 
 bool fomin_v_sentence_count::SentenceCountSequential::pre_processing() {
   internal_order_test();
-
-  if (world.rank() == 0) {
-    if (taskData->outputs[0] == nullptr) {
-      return false;
-    }
-    reinterpret_cast<int *>(taskData->outputs[0])[0] = sentence_count;
-  }
+  // Получаем входную строку
+  input_ = reinterpret_cast<char *>(taskData->inputs[0]);
+  sentence_count = 0;
   return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountSequential::validation() {
   internal_order_test();
+  // Проверяем, что входные данные содержат строку
   return taskData->inputs_count[0] == 1 && taskData->outputs_count[0] == 1;
 }
 
 bool fomin_v_sentence_count::SentenceCountSequential::run() {
   internal_order_test();
-
+  // Подсчитываем количество предложений
+  bool in_sentence = false;
   for (int i = 0; input_[i] != '\0'; ++i) {
-    if ((input_[i] == '.' || input_[i] == '!' || input_[i] == '?')) {
-      sentence_count++;
+    if (input_[i] == '.' || input_[i] == '!' || input_[i] == '?') {
+      if (in_sentence) {
+        sentence_count++;
+      }
+      in_sentence = false;
+    } else if (isspace(input_[i])) {
+      in_sentence = false;
+    } else {
+      in_sentence = true;
     }
   }
-
   return true;
 }
 
 bool fomin_v_sentence_count::SentenceCountSequential::post_processing() {
   internal_order_test();
-
-  // Проверка на nullptr
-  if (taskData->outputs[0] == nullptr) {
-    return false;
-  }
-
+  // Записываем результат в выходные данные
   reinterpret_cast<int *>(taskData->outputs[0])[0] = sentence_count;
   return true;
 }
