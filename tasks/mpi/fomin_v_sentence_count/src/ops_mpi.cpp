@@ -50,14 +50,24 @@ bool fomin_v_sentence_count::SentenceCountParallel::validation() {
 bool fomin_v_sentence_count::SentenceCountParallel::run() {
   internal_order_test();
   local_sentence_count = 0;
+  bool potential_sentence_end = false;
+  
   for (int i = 0; i < portion_size; ++i) {
-    if (ispunct(local_input_vec[i]) &&
+    if (ispunct(local_input_vec[i]) && 
         (local_input_vec[i] == '.' || local_input_vec[i] == '!' || local_input_vec[i] == '?')) {
-      if (i == portion_size - 1 || isspace(local_input_vec[i + 1])) {
+      // Проверяем, что это конец предложения
+      if (i == portion_size - 1) {
+        potential_sentence_end = true;
+      } else if (isspace(local_input_vec[i + 1]) || local_input_vec[i + 1] == '\0') {
         local_sentence_count++;
       }
     }
   }
+  
+  int send_potential_end = potential_sentence_end ? 1 : 0;
+  int recv_potential_end = 0;
+  boost::mpi::allreduce(world, &send_potential_end, 1, &recv_potential_end, std::plus<int>());
+  
   return true;
 }
 
