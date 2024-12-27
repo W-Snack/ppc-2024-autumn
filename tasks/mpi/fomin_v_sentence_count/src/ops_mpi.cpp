@@ -21,7 +21,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::pre_processing() {
     if (world.rank() == 0) {
       input_size = static_cast<int>(strlen(input_));
     }
-    boost::mpi::broadcast(world, input_size, 0);
+    broadcast(world, input_size, 0);
 
     int chunk_size = input_size / world.size();
     local_input.resize(chunk_size);
@@ -29,14 +29,14 @@ bool fomin_v_sentence_count::SentenceCountParallel::pre_processing() {
     if (world.rank() == 0) {
       for (int proc = 1; proc < world.size(); ++proc) {
         int start = proc * chunk_size;
-        boost::mpi::send(world, input_ + start, chunk_size, proc, 0);
+        send(world, input_ + start, chunk_size, proc, 0);
       }
       // Handle the case where input_size is not divisible by world.size()
       if (input_size % world.size() != 0) {
         // Additional handling if necessary
       }
     } else {
-      boost::mpi::recv(world, local_input.data(), chunk_size, 0, 0);
+      recv(world, local_input.data(), chunk_size, 0, 0);
     }
 
     local_sentence_count = 0;
@@ -60,7 +60,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::run() {
       }
     }
 
-    boost::mpi::reduce(world, local_sentence_count, sentence_count, boost::mpi::sum<int>(), 0);
+    reduce(world, local_sentence_count, sentence_count, boost::mpi::sum<int>(), 0);
 
     return true;
 }
@@ -74,7 +74,7 @@ bool fomin_v_sentence_count::SentenceCountParallel::post_processing() {
   }
 
   int total_sentence_count = 0;
-  boost::mpi::reduce(world, local_sentence_count, total_sentence_count, std::plus<int>(), 0);
+  reduce(world, local_sentence_count, total_sentence_count, std::plus<int>(), 0);
 
   if (world.rank() == 0) {
     reinterpret_cast<int *>(taskData->outputs[0])[0] = total_sentence_count;
